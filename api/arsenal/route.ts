@@ -7,28 +7,26 @@ import { JsonSchema } from 'tv4';
 
 import { has_auth } from '../auth/middleware';
 import { name_owner_split_mw } from './middleware';
-import { Room } from './models';
-import { IRoom } from './models.d'
+import { Arsenal } from './models';
 
 const slugify: (s: string) => string = require('slugify');
 
 /* tslint:disable:no-var-requires */
-const room_schema: JsonSchema = require('./../../test/api/room/schema');
+const arsenal_schema: JsonSchema = require('./../../test/api/arsenal/schema');
 
 const zip = (a0: any[], a1: any[]) => a0.map((x, i) => [x, a1[i]]);
 
 export const create = (app: restify.Server, namespace: string = ''): void => {
     app.post(`${namespace}/:name`, has_auth(),
-        (req: restify.Request & IOrmReq & {user_id: string}, res: restify.Response, next: restify.Next) => {
-            const room = new Room();
-            room.name = slugify(req.params.name.replace('_', '-'));
-            room.owner = req.user_id;
+        (req: restify.Request & IOrmReq, res: restify.Response, next: restify.Next) => {
+            const arsenal = new Arsenal();
+            arsenal.owner = req['user_id'];
 
             req.getOrm().typeorm.connection.manager
-                .save(room)
-                .then((room_obj: IRoom) => {
-                    if (room_obj == null) return next(new NotFoundError('Room'));
-                    res.json(201, room_obj);
+                .save(arsenal)
+                .then((arsenal_obj: Arsenal) => {
+                    if (arsenal_obj == null) return next(new NotFoundError('Arsenal'));
+                    res.json(201, arsenal_obj);
                     return next();
                 })
                 .catch(restCatch(req, res, next));
@@ -39,13 +37,12 @@ export const create = (app: restify.Server, namespace: string = ''): void => {
 export const read = (app: restify.Server, namespace: string = ''): void => {
     app.get(`${namespace}/:name_owner`, name_owner_split_mw,
         (req: restify.Request & IOrmReq, res: restify.Response, next: restify.Next) => {
-            console.info('room::route::read::', { name: req.params.name, owner: req.params.owner }, ';');
             req.getOrm().typeorm.connection
-                .getRepository(Room)
-                .findOne({ name: req.params.name, owner: req.params.owner })
-                .then((room: Room) => {
-                    if (room == null) return next(new NotFoundError('Room'));
-                    res.json(200, room);
+                .getRepository(Arsenal)
+                .findOne({ id: req.params.name, owner: req.params.owner })
+                .then((arsenal: Arsenal) => {
+                    if (arsenal == null) return next(new NotFoundError('Arsenal'));
+                    res.json(200, arsenal);
                     return next();
                 })
                 .catch(restCatch(req, res, next));
@@ -55,22 +52,22 @@ export const read = (app: restify.Server, namespace: string = ''): void => {
 
 export const update = (app: restify.Server, namespace: string = ''): void => {
     app.put(`${namespace}/:name_owner`, has_body, has_auth(),
-        mk_valid_body_mw_ignore(room_schema, ['Missing required property']), name_owner_split_mw,
+        mk_valid_body_mw_ignore(arsenal_schema, ['Missing required property']), name_owner_split_mw,
         (req: restify.Request & IOrmReq, res: restify.Response, next: restify.Next) => {
-            const roomR = req.getOrm().typeorm.connection.getRepository(Room);
+            const arsenalR = req.getOrm().typeorm.connection.getRepository(Arsenal);
 
             // TODO: Transaction
             series([
                 cb =>
-                    roomR
-                        .update({ name: req.params.name, owner: req['user_id'] }, req.body)
+                    arsenalR
+                        .update({ id: req.params.name, owner: req['user_id'] }, req.body)
                         .then(() => cb(void 0))
                         .catch(cb),
                 cb =>
-                    roomR
+                    arsenalR
                         .findOne(req.body)
-                        .then(room => {
-                            if (room == null) return cb(new NotFoundError('Room'));
+                        .then(arsenal => {
+                            if (arsenal == null) return cb(new NotFoundError('Arsenal'));
                             return cb();
                         })
                         .catch(cb)
@@ -87,7 +84,7 @@ export const del = (app: restify.Server, namespace: string = ''): void => {
     app.del(`${namespace}/:name`, has_auth(),
         (req: restify.Request & IOrmReq, res: restify.Response, next: restify.Next) => {
             req.getOrm().typeorm.connection
-                .getRepository(Room)
+                .getRepository(Arsenal)
                 .remove({ owner: req['user_id'], name: req.params.name } as any)
                 .then(() => {
                     res.send(204);

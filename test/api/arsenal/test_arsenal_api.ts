@@ -6,21 +6,21 @@ import { basename } from 'path';
 import { Server } from 'restify';
 
 import { AccessToken } from '../../../api/auth/models';
-import { IRoom } from '../../../api/room/models.d';
+import { IArsenal } from '../../../api/arsenal/models.d';
 import { _orms_out } from '../../../config';
 import { all_models_and_routes_as_mr, setupOrmApp } from '../../../main';
 import { create_and_auth_users } from '../../shared_tests';
 import { AuthTestSDK } from '../auth/auth_test_sdk';
 import { user_mocks } from '../user/user_mocks';
-import { room_mocks } from './room_mocks';
-import { RoomTestSDK } from './room_test_sdk';
+import { arsenal_mocks } from './arsenal_mocks';
+import { ArsenalTestSDK } from './arsenal_test_sdk';
 import { User } from '../../../api/user/models';
 import { after, afterEach, before, describe, it } from 'mocha';
 
 const models_and_routes: IModelRoute = {
     user: all_models_and_routes_as_mr['user'],
     auth: all_models_and_routes_as_mr['auth'],
-    room: all_models_and_routes_as_mr['room']
+    arsenal: all_models_and_routes_as_mr['arsenal']
 };
 
 process.env['NO_SAMPLE_DATA'] = 'true';
@@ -29,11 +29,11 @@ export const user_mocks_subset: User[] = user_mocks.successes.slice(20, 30);
 const tapp_name = `test::${basename(__dirname)}`;
 const logger = createLogger({ name: tapp_name });
 
-describe('Room::routes', () => {
-    let sdk: RoomTestSDK;
+describe('Arsenal::routes', () => {
+    let sdk: ArsenalTestSDK;
     let auth_sdk: AuthTestSDK;
 
-    const mocks: {successes: IRoom[], failures: Array<{}>} = room_mocks;
+    const mocks: {successes: IArsenal[], failures: Array<{}>} = arsenal_mocks;
 
     before(done =>
         async.waterfall([
@@ -48,7 +48,7 @@ describe('Room::routes', () => {
                     _orms_out.orms_out = orms_out;
 
                     auth_sdk = new AuthTestSDK(_app);
-                    sdk = new RoomTestSDK(_app);
+                    sdk = new ArsenalTestSDK(_app);
 
                     return cb(void 0);
                 },
@@ -61,45 +61,45 @@ describe('Room::routes', () => {
     after('unregister all users', done => auth_sdk.unregister_all(user_mocks_subset, done));
     after('tearDownConnections', done => tearDownConnections(_orms_out.orms_out, done));
 
-    describe('/api/room', () => {
-        afterEach('deleteRoom', done =>
+    describe('/api/arsenal', () => {
+        afterEach('deleteArsenal', done =>
             async.series([
                 cb => sdk.destroy(user_mocks_subset[0].access_token, mocks.successes[0], () => cb()),
                 cb => sdk.destroy(user_mocks_subset[0].access_token, mocks.successes[1], () => cb())
             ], done)
         );
 
-        it('POST should create room', done =>
+        it('POST should create arsenal', done =>
             sdk.create(user_mocks_subset[0].access_token, mocks.successes[0], done)
         );
 
-        it('GET should get all rooms', done => async.series([
+        it('GET should get all arsenals', done => async.series([
                 cb => sdk.create(user_mocks_subset[0].access_token, mocks.successes[1], cb),
                 cb => sdk.getAll(user_mocks_subset[0].access_token, mocks.successes[0], cb)
             ], done)
         );
     });
 
-    describe('/api/room/:name', () => {
-        before('createRoom', done => sdk.create(user_mocks_subset[0].access_token, mocks.successes[2], done));
-        after('deleteRoom', done => sdk.destroy(user_mocks_subset[0].access_token, mocks.successes[2], done));
+    describe('/api/arsenal/:name', () => {
+        before('createArsenal', done => sdk.create(user_mocks_subset[0].access_token, mocks.successes[2], done));
+        after('deleteArsenal', done => sdk.destroy(user_mocks_subset[0].access_token, mocks.successes[2], done));
 
-        it('GET should retrieve room', done =>
+        it('GET should retrieve arsenal', done =>
             sdk.retrieve(user_mocks_subset[0].access_token, mocks.successes[2], done)
         );
 
         /*
-        it('PUT should update room', done =>
+        it('PUT should update arsenal', done =>
             sdk.update(user_mocks_subset[0].access_token, mocks.successes[2],
                 {
                     owner: mocks.successes[1].owner,
                     name: `NAME: ${mocks.successes[1].name}`
-                } as IRoom, done)
+                } as IArsenal, done)
         );
         */
 
         /*
-        it('DELETE should destroy room', done =>
+        it('DELETE should destroy arsenal', done =>
             sdk.destroy(user_mocks_subset[0].access_token, mocks.successes[2], done)
         );
         */

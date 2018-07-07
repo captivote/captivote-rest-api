@@ -1,6 +1,7 @@
 import * as faker from 'faker';
 
 import { User } from '../../../api/user/models';
+import slugify from 'slugify';
 
 export const user_mocks: {successes: User[], failures: Array<{}>} = {
     failures: [
@@ -12,7 +13,7 @@ export const user_mocks: {successes: User[], failures: Array<{}>} = {
     successes: Array(100)
         .fill(void 0)
         .map((_, idx) => ({
-            email: faker.internet.email(),
+            email: slugify(faker.internet.email().replace('_', '-')),
             password: faker.internet.password(),
             /* tslint:disable:no-bitwise */
             roles: (idx & 1) === 0 ?

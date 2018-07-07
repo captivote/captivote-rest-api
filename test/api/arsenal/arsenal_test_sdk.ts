@@ -5,29 +5,29 @@ import { IncomingMessageError, sanitiseSchema, superEndCb, TCallback } from 'nod
 import * as supertest from 'supertest';
 import { Response } from 'supertest';
 
-import { IRoom } from '../../../api/room/models.d';
-import * as room_route from '../../../api/room/route';
-import * as room_routes from '../../../api/room/routes';
+import { IArsenal } from '../../../api/arsenal/models.d';
+import * as arsenal_route from '../../../api/arsenal/route';
+import * as arsenal_routes from '../../../api/arsenal/routes';
 import { User } from '../../../api/user/models';
 
 /* tslint:disable:no-var-requires */
 const user_schema = sanitiseSchema(require('./../user/schema.json'), User._omit);
-const room_schema = require('./schema.json');
+const arsenal_schema = require('./schema.json');
 
 chai.use(chaiJsonSchema);
 
-export class RoomTestSDK {
+export class ArsenalTestSDK {
     constructor(public app) {
     }
 
-    public create(access_token: string, room: IRoom,
+    public create(access_token: string, arsenal: IArsenal,
                   callback: TCallback<Error | IncomingMessageError, Response>) {
         if (access_token == null) return callback(new TypeError('`access_token` argument to `create` must be defined'));
-        else if (room == null) return callback(new TypeError('`room` argument to `create` must be defined'));
+        else if (arsenal == null) return callback(new TypeError('`arsenal` argument to `create` must be defined'));
 
-        expect(room_route.create).to.be.an.instanceOf(Function);
+        expect(arsenal_route.create).to.be.an.instanceOf(Function);
         supertest(this.app)
-            .post(`/api/room/${room.name}`)
+            .post(`/api/arsenal/${arsenal.id}`)
             .set('Connection', 'keep-alive')
             .set('X-Access-Token', access_token)
             .expect('Content-Type', /json/)
@@ -38,7 +38,7 @@ export class RoomTestSDK {
                 try {
                     expect(res.status).to.be.equal(201);
                     expect(res.body).to.be.an('object');
-                    expect(res.body).to.be.jsonSchema(room_schema);
+                    expect(res.body).to.be.jsonSchema(arsenal_schema);
                 } catch (e) {
                     err = e as Chai.AssertionError;
                 } finally {
@@ -47,14 +47,14 @@ export class RoomTestSDK {
             });
     }
 
-    public getAll(access_token: string, room: IRoom,
+    public getAll(access_token: string, arsenal: IArsenal,
                   callback: TCallback<Error | IncomingMessageError, Response>) {
         if (access_token == null) return callback(new TypeError('`access_token` argument to `getAll` must be defined'));
-        else if (room == null) return callback(new TypeError('`room` argument to `getAll` must be defined'));
+        else if (arsenal == null) return callback(new TypeError('`arsenal` argument to `getAll` must be defined'));
 
-        expect(room_routes.readAll).to.be.an.instanceOf(Function);
+        expect(arsenal_routes.readAll).to.be.an.instanceOf(Function);
         supertest(this.app)
-            .get('/api/rooms')
+            .get('/api/arsenals')
             .set('Connection', 'keep-alive')
             .set('X-Access-Token', access_token)
             .expect('Content-Type', /json/)
@@ -64,11 +64,11 @@ export class RoomTestSDK {
                 else if (res.error != null) return superEndCb(callback)(res.error);
                 try {
                     expect(res.body).to.have.property('owner');
-                    expect(res.body).to.have.property('rooms');
-                    expect(res.body.rooms).to.be.instanceOf(Array);
-                    res.body.rooms.map(_room => {
-                        expect(_room).to.be.an('object');
-                        expect(_room).to.be.jsonSchema(room_schema);
+                    expect(res.body).to.have.property('arsenals');
+                    expect(res.body.arsenals).to.be.instanceOf(Array);
+                    res.body.arsenals.map(_arsenal => {
+                        expect(_arsenal).to.be.an('object');
+                        expect(_arsenal).to.be.jsonSchema(arsenal_schema);
                     });
                 } catch (e) {
                     err = e as Chai.AssertionError;
@@ -78,16 +78,15 @@ export class RoomTestSDK {
             });
     }
 
-    public retrieve(access_token: string, room: IRoom,
+    public retrieve(access_token: string, arsenal: IArsenal,
                     callback: TCallback<Error | IncomingMessageError, Response>) {
-        if (access_token == null) return callback(new TypeError('`access_token` argument to `retrieve` must be defined'));
-        else if (room == null) return callback(new TypeError('`room` argument to `retrieve` must be defined'));
-        else if (room.owner == null) return callback(new TypeError('`room.owner` argument to `retrieve` must be defined'));
+        if (access_token == null) return callback(new TypeError('`access_token` argument to `getAll` must be defined'));
+        else if (arsenal == null) return callback(new TypeError('`arsenal` argument to `getAll` must be defined'));
 
-        expect(room_route.read).to.be.an.instanceOf(Function);
-        console.info('RoomTestSDK::retrieve::room =', room, ';');
+        expect(arsenal_route.read).to.be.an.instanceOf(Function);
+        console.info('`/api/arsenal/${arsenal.id}` =', `/api/arsenal/${arsenal.id}`)
         supertest(this.app)
-            .get(`/api/room/${room.name}_${room.owner}`)
+            .get(`/api/arsenal/${arsenal.id}`)
             .set('Connection', 'keep-alive')
             .set('X-Access-Token', access_token)
             .expect('Content-Type', /json/)
@@ -97,7 +96,7 @@ export class RoomTestSDK {
                 else if (res.error != null) return superEndCb(callback)(res.error);
                 try {
                     expect(res.body).to.be.an('object');
-                    expect(res.body).to.be.jsonSchema(room_schema);
+                    expect(res.body).to.be.jsonSchema(arsenal_schema);
                 } catch (e) {
                     err = e as Chai.AssertionError;
                 } finally {
@@ -106,34 +105,34 @@ export class RoomTestSDK {
             });
     }
 
-    public update(access_token: string, initial_room: IRoom,
-                  updated_room: IRoom, callback: TCallback<Error | IncomingMessageError, Response>) {
+    public update(access_token: string, initial_arsenal: IArsenal,
+                  updated_arsenal: IArsenal, callback: TCallback<Error | IncomingMessageError, Response>) {
         if (access_token == null)
             return callback(new TypeError('`access_token` argument to `update` must be defined'));
-        else if (initial_room == null)
-            return callback(new TypeError('`initial_room` argument to `update` must be defined'));
-        else if (updated_room == null)
-            return callback(new TypeError('`updated_room` argument to `update` must be defined'));
-        else if (initial_room.owner !== updated_room.owner)
+        else if (initial_arsenal == null)
+            return callback(new TypeError('`initial_arsenal` argument to `update` must be defined'));
+        else if (updated_arsenal == null)
+            return callback(new TypeError('`updated_arsenal` argument to `update` must be defined'));
+        else if (initial_arsenal.owner !== updated_arsenal.owner)
             return callback(
-                new ReferenceError(`${initial_room.owner} != ${updated_room.owner} (\`owner\`s between rooms)`)
+                new ReferenceError(`${initial_arsenal.owner} != ${updated_arsenal.owner} (\`owner\`s between arsenals)`)
             );
 
-        expect(room_route.update).to.be.an.instanceOf(Function);
+        expect(arsenal_route.update).to.be.an.instanceOf(Function);
         supertest(this.app)
-            .put(`/api/room/${initial_room.name}`)
+            .put(`/api/arsenal/${initial_arsenal.id}`)
             .set('Connection', 'keep-alive')
             .set('X-Access-Token', access_token)
-            .send(updated_room)
+            .send(updated_arsenal)
             .end((err, res: Response) => {
                 if (err != null) return superEndCb(callback)(err);
                 else if (res.error != null) return superEndCb(callback)(res.error);
                 try {
                     expect(res.body).to.be.an('object');
-                    Object.keys(updated_room).map(
-                        attr => expect(updated_room[attr]).to.be.equal(res.body[attr])
+                    Object.keys(updated_arsenal).map(
+                        attr => expect(updated_arsenal[attr]).to.be.equal(res.body[attr])
                     );
-                    expect(res.body).to.be.jsonSchema(room_schema);
+                    expect(res.body).to.be.jsonSchema(arsenal_schema);
                 } catch (e) {
                     err = e as Chai.AssertionError;
                 } finally {
@@ -142,16 +141,16 @@ export class RoomTestSDK {
             });
     }
 
-    public destroy(access_token: string, room: IRoom,
+    public destroy(access_token: string, arsenal: IArsenal,
                    callback: TCallback<Error | IncomingMessageError, Response>) {
         if (access_token == null)
             return callback(new TypeError('`access_token` argument to `destroy` must be defined'));
-        else if (room == null)
-            return callback(new TypeError('`room` argument to `destroy` must be defined'));
+        else if (arsenal == null)
+            return callback(new TypeError('`arsenal` argument to `destroy` must be defined'));
 
-        expect(room_route.del).to.be.an.instanceOf(Function);
+        expect(arsenal_route.del).to.be.an.instanceOf(Function);
         supertest(this.app)
-            .del(`/api/room/${room.name}`)
+            .del(`/api/arsenal/${arsenal.id}`)
             .set('Connection', 'keep-alive')
             .set('X-Access-Token', access_token)
             .end((err, res: Response) => {

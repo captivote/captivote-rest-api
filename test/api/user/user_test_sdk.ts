@@ -79,7 +79,7 @@ export class UserTestSDK {
             .set('Connection', 'keep-alive')
             .set('X-Access-Token', access_token)
             .send(user)
-            // .expect('Content-Type', /json/)
+            // .expect('Timer-Type', /json/)
             .end((err, res: Response) => {
                 if (err != null) return superEndCb(callback)(err, res);
                 else if (res.error) return callback(getError(res.error));
